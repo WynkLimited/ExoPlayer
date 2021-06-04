@@ -23,9 +23,11 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.os.BatteryManager;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.PowerManager;
+import android.util.Log;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.util.Assertions;
@@ -153,18 +155,22 @@ public final class Requirements implements Parcelable {
       return 0;
     }
 
-    ConnectivityManager connectivityManager =
-        (ConnectivityManager)
-            Assertions.checkNotNull(context.getSystemService(Context.CONNECTIVITY_SERVICE));
-    @Nullable NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-    if (networkInfo == null
-        || !networkInfo.isConnected()
-        || !isInternetConnectivityValidated(connectivityManager)) {
-      return requirements & (NETWORK | NETWORK_UNMETERED);
-    }
+    try {
+      ConnectivityManager connectivityManager =
+          (ConnectivityManager)
+              Assertions.checkNotNull(context.getSystemService(Context.CONNECTIVITY_SERVICE));
+      @Nullable NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+      if (networkInfo == null
+          || !networkInfo.isConnected()
+          || !isInternetConnectivityValidated(connectivityManager)) {
+        return requirements & (NETWORK | NETWORK_UNMETERED);
+      }
 
-    if (isUnmeteredNetworkRequired() && connectivityManager.isActiveNetworkMetered()) {
-      return NETWORK_UNMETERED;
+      if (isUnmeteredNetworkRequired() && connectivityManager.isActiveNetworkMetered()) {
+        return NETWORK_UNMETERED;
+      }
+    } catch(SecurityException securityException) {
+      return 0;
     }
 
     return 0;
